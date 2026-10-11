@@ -1,25 +1,33 @@
-import React from 'react';
+import { Navigate, Route, Routes } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Home from "./pages/Home";
+import AdminPage from "./pages/AdminPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
-    <div className="container">
-      <header className="header">
-        <h1>📚 Library Management System</h1>
-        <p className="subtitle">Assignment 4 — CRUD with Client-Side Rendering</p>
-      </header>
-      <main className="card">
-        <h2>Initial Project Setup Complete</h2>
-        <p>
-          The frontend bootstrap skeleton is successfully established. Feature development
-          will commence once team members are assigned to their respective GitHub Issues.
-        </p>
-        <div className="badge-row">
-          <span className="badge">React + Vite</span>
-          <span className="badge">Node.js + Express</span>
-          <span className="badge">MongoDB</span>
-        </div>
-      </main>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
