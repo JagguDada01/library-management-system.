@@ -1,31 +1,47 @@
 import mongoose from "mongoose";
 import Book from "../models/Book.js";
 
+// Helper function to escape special regular expression characters
+function escapeRegex(text) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function getBooks(req, res) {
   try {
-    const { search, category, title, author, isbn } = req.query;
+    const { search, category, title, author, isbn, available } = req.query;
     let query = {};
 
-    if (search) {
+    if (search && typeof search === "string") {
+      const escapedSearch = escapeRegex(search.trim());
       query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { author: { $regex: search, $options: "i" } },
-        { isbn: { $regex: search, $options: "i" } }
+        { title: { $regex: escapedSearch, $options: "i" } },
+        { author: { $regex: escapedSearch, $options: "i" } },
+        { isbn: { $regex: escapedSearch, $options: "i" } }
       ];
     }
 
-    if (category) {
-      query.category = { $regex: new RegExp(`^${category}$`, "i") };
+    if (category && typeof category === "string") {
+      const escapedCategory = escapeRegex(category.trim());
+      query.category = { $regex: new RegExp(`^${escapedCategory}$`, "i") };
     }
 
-    if (title) {
-      query.title = { $regex: title, $options: "i" };
+    if (title && typeof title === "string") {
+      query.title = { $regex: escapeRegex(title.trim()), $options: "i" };
     }
-    if (author) {
-      query.author = { $regex: author, $options: "i" };
+    if (author && typeof author === "string") {
+      query.author = { $regex: escapeRegex(author.trim()), $options: "i" };
     }
-    if (isbn) {
-      query.isbn = { $regex: isbn, $options: "i" };
+    if (isbn && typeof isbn === "string") {
+      query.isbn = { $regex: escapeRegex(isbn.trim()), $options: "i" };
+    }
+
+    if (available === "true") {
+      query.availableCopies = { $gt: 0 };
+    } else if (available === "false") {
+      query.availableCopies = 0;
     }
 
     const books = await Book.find(query).sort({ createdAt: -1 });
