@@ -9,4 +9,13 @@ async function request(path) {
   return data;
 }
 
-export function getBooks() { return request("/books"); }
+export function getBooks(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.search.trim()) params.set("search", filters.search.trim());
+  if (filters.category) params.set("category", filters.category);
+  const query = params.toString();
+  return request(`/books${query ? `?${query}` : ""}`);
+}
+
+export function createBook(book) { return request("/books", { method: "POST", body: JSON.stringify(book) }); }
+export function updateBook(id, book) { return request(`/books/${id}`, { method: "PUT", body: JSON.stringify(book) }); }
