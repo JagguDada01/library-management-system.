@@ -1,28 +1,58 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true
-}));
+app.use(
+  cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" })
+);
 app.use(express.json());
 
-// Base health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'Library Management System API is running',
-    timestamp: new Date().toISOString()
+app.get("/api/health", (req, res) => {
+  const connected = mongoose.connection.readyState === 1;
+  return res.status(connected ? 200 : 503).json({
+    status: connected ? "ok" : "database unavailable",
+    message: "Library Management System API"
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`[Server] Library Management System API starter listening on port ${PORT}`);
+app.use("/api/auth", authRoutes);
+
+app.use((req, res) => {
+  return res.status(404).json({ message: "Route not found" });
 });
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+  console.error(error);
+  const status = error.status || error.statusCode || 500;
+  return res.status(status).json({
+    message: status >= 500 ? "Internal server error" : error.message
+  });
+});
+
+async function startServer() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is missing from backend/.env");
+  }
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+if (process.env.NODE_ENV !== "test") {
+  startServer().catch((error) => {
+    console.error("Server startup failed:", error.message);
+    process.exit(1);
+  });
+}
+
+export default app;
