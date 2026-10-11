@@ -26,6 +26,7 @@ const bookSchema = new mongoose.Schema(
     publicationYear: {
       type: Number,
       required: [true, "Publication year is required"],
+      max: [new Date().getFullYear(), "Publication year cannot exceed the current year"],
       validate: {
         validator: Number.isInteger,
         message: "Publication year must be an integer"
